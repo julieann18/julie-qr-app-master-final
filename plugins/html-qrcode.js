@@ -1,9 +1,10 @@
-import { Html5Qrcode } from 'html5-qrcode'
+// plugins/html-qrcode.js
+import { Html5Qrcode, Html5QrcodeScanner } from 'html5-qrcode'
 
-export default defineNuxtPlugin(() => {
-  return {
-    provide: {
-      html5Qrcode: Html5Qrcode
-    }
+export default {
+  install: (app) => {
+    // Attach both classes globally to Vue app
+    app.config.globalProperties.$Html5Qrcode = Html5Qrcode
+    app.config.globalProperties.$Html5QrcodeScanner = Html5QrcodeScanner
   }
-})
+}

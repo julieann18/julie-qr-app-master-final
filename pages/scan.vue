@@ -1,17 +1,17 @@
 <template>
   <v-container class="fill-height" fluid>
     <v-row align="center" justify="center">
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="8">
         <v-card class="pa-5" elevation="4">
           <v-card-title class="text-h6 text-center">
             <v-icon class="mr-2">mdi-qrcode-scan</v-icon>
-            Scan QR Code
+            Scan QR Code (Auto UI)
           </v-card-title>
-
           <v-card-text>
-            <!-- Live camera QR scanner area -->
-            <div id="reader" style="width: 100%; height: auto;"></div>
+            <!-- Scanner will auto-render here -->
+            <div id="reader" style="width: 100%; max-width: 500px; margin: auto;"></div>
 
+            <!-- Scan result output -->
             <v-alert
               v-if="result"
               type="success"
@@ -31,49 +31,40 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { Html5Qrcode } from 'html5-qrcode'
+import { Html5QrcodeScanner } from 'html5-qrcode'
 
 const result = ref('')
-let html5QrCode = null
+let scannerInstance = null
 
 onMounted(() => {
-  const qrRegionId = 'reader'
-  html5QrCode = new Html5Qrcode(qrRegionId)
+  scannerInstance = new Html5QrcodeScanner(
+    'reader',
+    {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      rememberLastUsedCamera: true,
+      showTorchButtonIfSupported: true
+    },
+    false // Set to true for verbose logging
+  )
 
-  Html5Qrcode.getCameras().then((devices) => {
-    if (devices && devices.length) {
-      // Use the first camera (or back camera on mobile)
-      const backCamera =
-        devices.find((device) =>
-          device.label.toLowerCase().includes('back')
-        ) || devices[0]
-      const cameraId = backCamera.id
-
-      html5QrCode.start(
-        cameraId,
-        {
-          fps: 10,
-          qrbox: 250,
-        },
-        (decodedText) => {
-          result.value = decodedText
-          html5QrCode.stop().then(() => html5QrCode.clear())
-        },
-        (errorMessage) => {
-          // Ignore scan errors
-        }
-      )
-    } else {
-      console.error('No cameras found.')
+  scannerInstance.render(
+    (decodedText) => {
+      result.value = decodedText
+      scannerInstance.clear()
+    },
+    (error) => {
+      // Optionally log errors
+      // console.warn(error)
     }
-  }).catch((err) => {
-    console.error('Camera error:', err)
-  })
+  )
 })
 
 onBeforeUnmount(() => {
-  if (html5QrCode) {
-    html5QrCode.stop().then(() => html5QrCode.clear())
+  if (scannerInstance) {
+    scannerInstance.clear().catch(err => {
+      console.warn("Failed to clear scanner on unmount", err)
+    })
   }
 })
 </script>
